@@ -4,7 +4,7 @@
 Plugin Name: Language Helper
 Plugin URI: https://github.com/benhuson/language-helper
 Description: Allows you to select the language used for the WordPress frontend and admin.
-Version: 0.1
+Version: 0.1.4
 Author: Ben Huson
 Author URI: https://github.com/benhuson
 License: GPL2
@@ -106,6 +106,7 @@ class LanguageHelper {
 	 */
 	function admin_options_page() {
 		$updated = isset( $_REQUEST['updated'] ) ? $_REQUEST['updated'] : false;
+		LanguageHelper::flush_mo_files_cache();
 		?>
 
 		<div class="wrap">
@@ -274,10 +275,32 @@ class LanguageHelper {
 	 * @since  0.1.3
 	 *
 	 * @return  array  Array of .mo files.
+	 *
+	 * @uses  get_site_transient()
+	 * @uses  set_site_transient()
 	 */
 	function get_mo_files() {
-		$mo_files = glob( WP_CONTENT_DIR . '/languages/*.mo' );
-		return array_map( 'basename', $mo_files );
+		$mo_files = get_site_transient( 'wplang_helper_mo_files' );
+		if ( false === $mo_files ) {
+			$mo_files = glob( WP_CONTENT_DIR . '/languages/*.mo' );
+			$mo_files = array_map( 'basename', $mo_files );
+			set_site_transient( 'wplang_helper_mo_files', $mo_files, 60 * 60 * 24 );
+		}
+		return $mo_files;
+	}
+
+	/**
+	 * Flush .mo Files Cache
+	 *
+	 * Deletes the transient which stores .mo files cache to force them
+	 * to be re-checked.
+	 *
+	 * @since  0.1.4
+	 *
+	 * @uses  delete_site_transient()
+	 */
+	function flush_mo_files_cache() {
+		delete_site_transient( 'wplang_helper_mo_files' );
 	}
 
 	/**
